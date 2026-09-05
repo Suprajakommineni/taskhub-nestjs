@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { TeamMember } from 'src/models/team-member.model';
-import { Team } from 'src/models/team.model';
-import { User } from 'src/models/user.model';
+import { Team } from '../models/team.model';
+import { User } from '../models/user.model';
 
 @Injectable()
 export class TeamsService {

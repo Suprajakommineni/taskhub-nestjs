@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { imageUploadOptions } from '../common/upload.config';
@@ -46,6 +46,9 @@ export class UsersController {
   ) {
     if (!file) throw new BadRequestException('No photo file provided');
     const user = req.user as { userId: number };
-    return this.usersService.updatePhoto(user.userId, `/uploads/${file.filename}`);
+    return this.usersService.updatePhoto(
+      user.userId,
+      `/uploads/${file.filename}`,
+    );
   }
 }

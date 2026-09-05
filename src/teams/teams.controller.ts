@@ -15,7 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import type { Request } from 'express';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AddTeamMemberdto } from './dto/add-team-member.dto';
 import { UpdateTeamMemberDto } from './dto/update-teamber.dto';
 import { imageUploadOptions } from '../common/upload.config';
