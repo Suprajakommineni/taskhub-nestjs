@@ -9,7 +9,7 @@ import {
 export class RegisterDto {
   @IsString()
   @IsNotEmpty()
-  name!: string;
+  username!: string;
 
   @IsEmail()
   @IsNotEmpty()
