@@ -72,7 +72,7 @@ export class TeamsController {
       Number(id),
       user.userId,
       dto,
-      file ? `/uploads/${file.filename}` : undefined,
+      file ? file.path : undefined,
     );
   }
 
