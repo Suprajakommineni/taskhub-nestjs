@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
+
+import * as mysql2 from 'mysql2';
 import { User } from './models/user.model';
 import { Project } from './models/project.model';
 import { Task } from './models/task.model';
@@ -25,6 +27,8 @@ import { UsersModule } from './users/users.module';
       process.env.DATABASE_URL
         ? {
             dialect: 'mysql',
+            dialectModule: mysql2,
+
             uri: process.env.DATABASE_URL,
             dialectOptions:
               process.env.DB_SSL === 'true'
@@ -44,6 +48,7 @@ import { UsersModule } from './users/users.module';
           }
         : {
             dialect: 'mysql',
+            dialectModule: mysql2,
             host: 'localhost',
             port: 3306,
             username: 'root',
