@@ -8,7 +8,7 @@ export const imageUploadOptions = {
     params: {
       folder: 'taskhub/profile-photos',
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    },
+    } as any,
   }),
 
   fileFilter: (
