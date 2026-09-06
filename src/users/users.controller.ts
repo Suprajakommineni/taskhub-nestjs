@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { imageUploadOptions } from '../common/upload.config';
+import { uploadToBlob } from '../common/blob-upload';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -40,12 +41,13 @@ export class UsersController {
 
   @Post('me/photo')
   @UseInterceptors(FileInterceptor('photo', imageUploadOptions))
-  uploadPhoto(
+  async uploadPhoto(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Req() req: Request,
   ) {
     if (!file) throw new BadRequestException('No photo file provided');
     const user = req.user as { userId: number };
-    return this.usersService.updatePhoto(user.userId, file.path);
+    const url = await uploadToBlob(file);
+    return this.usersService.updatePhoto(user.userId, url);
   }
 }

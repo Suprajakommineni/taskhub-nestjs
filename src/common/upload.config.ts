@@ -1,16 +1,8 @@
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from './cloudinary.config';
+import { memoryStorage } from 'multer';
 import type { Request } from 'express';
 
 export const imageUploadOptions = {
-  storage: new CloudinaryStorage({
-    cloudinary,
-    params: {
-      folder: 'taskhub/profile-photos',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    } as any,
-  }),
-
+  storage: memoryStorage(),
   fileFilter: (
     _req: Request,
     file: Express.Multer.File,
@@ -20,10 +12,8 @@ export const imageUploadOptions = {
       cb(new Error('Only JPG, PNG, GIF, or WEBP images are allowed'), false);
       return;
     }
-
     cb(null, true);
   },
-
   limits: {
     fileSize: 5 * 1024 * 1024,
   },

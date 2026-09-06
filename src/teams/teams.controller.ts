@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AddTeamMemberdto } from './dto/add-team-member.dto';
 import { UpdateTeamMemberDto } from './dto/update-teamber.dto';
 import { imageUploadOptions } from '../common/upload.config';
+import { uploadToBlob } from '../common/blob-upload';
 
 @Controller('teams')
 @UseGuards(JwtAuthGuard)
@@ -61,19 +62,15 @@ export class TeamsController {
 
   @Post(':id/members')
   @UseInterceptors(FileInterceptor('photo', imageUploadOptions))
-  addMember(
+  async addMember(
     @Param('id') id: string,
     @Body() dto: AddTeamMemberdto,
     @UploadedFile() file: Express.Multer.File | undefined,
     @Req() req: Request,
   ) {
     const user = req.user as { userId: number };
-    return this.teamsService.addMember(
-      Number(id),
-      user.userId,
-      dto,
-      file ? file.path : undefined,
-    );
+    const url = file ? await uploadToBlob(file) : undefined;
+    return this.teamsService.addMember(Number(id), user.userId, dto, url);
   }
 
   @Patch(':teamId/members/:memberId')
