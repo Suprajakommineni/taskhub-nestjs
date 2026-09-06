@@ -17,9 +17,7 @@ async function bootstrap() {
 
   // CORS_ORIGIN supports a single URL or a comma-separated list, e.g.
   // "https://taskhub.vercel.app,https://staging-taskhub.vercel.app"
-  const corsOrigin = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-    : 'http://localhost:5173';
+  const corsOrigin = "https://taskhub-web-frontend.vercel.app"
   app.enableCors({ origin: corsOrigin });
 
   app.useGlobalPipes(new ValidationPipe());
