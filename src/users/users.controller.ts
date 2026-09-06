@@ -46,9 +46,6 @@ export class UsersController {
   ) {
     if (!file) throw new BadRequestException('No photo file provided');
     const user = req.user as { userId: number };
-    return this.usersService.updatePhoto(
-      user.userId,
-      `/uploads/${file.filename}`,
-    );
+    return this.usersService.updatePhoto(user.userId, file.path);
   }
 }

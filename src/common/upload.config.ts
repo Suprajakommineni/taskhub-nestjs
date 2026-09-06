@@ -1,18 +1,13 @@
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { resolveUploadsDir } from './uploads-dir';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from './cloudinary.config';
 import type { Request } from 'express';
 
 export const imageUploadOptions = {
-  storage: diskStorage({
-    destination: resolveUploadsDir(),
-    filename: (
-      _req: Request,
-      file: Express.Multer.File,
-      cb: (error: Error | null, filename: string) => void,
-    ) => {
-      const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      cb(null, `${unique}${extname(file.originalname)}`);
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: 'taskhub/profile-photos',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
     },
   }),
 
