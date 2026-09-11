@@ -2,12 +2,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { TeamMember } from 'src/models/team-member.model';
 import { Team } from '../models/team.model';
 import { User } from '../models/user.model';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class TeamsService {
@@ -18,6 +19,8 @@ export class TeamsService {
     private teamMemberModel: typeof TeamMember,
     @InjectModel(User)
     private userModel: typeof User,
+    private eventEmitter: EventEmitter2,
+    private jwtService: JwtService,
   ) {}
   async create(name: string, ownerId: number) {
     return this.teamModel.create({ name, ownerId });
@@ -52,32 +55,46 @@ export class TeamsService {
   async addMember(
     teamId: number,
     ownerId: number,
-    data: {
-      email: string;
-      role: 'lead' | 'member';
-    },
+    data: { email: string; role: 'lead' | 'member' },
     photoUrl?: string,
   ) {
     await this.findOne(teamId, ownerId);
-    const user = await this.userModel.findOne({
-      where: { email: data.email.trim().toLowerCase() },
-    });
-    if (!user) {
-      throw new BadRequestException(`User ${data.email} not found`);
-    }
+    const email = data.email.trim().toLowerCase();
 
-    // Only fills in a blank avatar — never overwrites a photo the member
-    // already set for themselves in their own account.
-    if (photoUrl && !user.profilePhoto) {
+    let user = await this.userModel.findOne({ where: { email } });
+    let isNewUser = false;
+
+    if (!user) {
+      isNewUser = true;
+      user = await this.userModel.create({
+        email,
+        username: email.split('@')[0], // placeholder, they can change it later
+        passwordHash: null,
+        profilePhoto: photoUrl ?? null,
+      });
+    } else if (photoUrl && !user.profilePhoto) {
       user.profilePhoto = photoUrl;
       await user.save();
     }
 
-    return this.teamMemberModel.create({
+    const teamMember = await this.teamMemberModel.create({
       teamId,
       userId: user.id,
       role: data.role,
     });
+
+    if (isNewUser) {
+      const inviteToken = this.jwtService.sign(
+        { userId: user.id, purpose: 'invite' },
+        { expiresIn: '24h' }, // overrides the module default for this specific token
+      );
+      this.eventEmitter.emit('member.invited', {
+        email: user.email,
+        inviteToken,
+      });
+    }
+
+    return teamMember;
   }
   async updateMember(
     teamId: number,

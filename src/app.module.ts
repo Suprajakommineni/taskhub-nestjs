@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-
 import * as mysql2 from 'mysql2';
 import { User } from './models/user.model';
 import { Project } from './models/project.model';
@@ -17,6 +16,8 @@ import { TaskAssignee } from './models/task-assignee.model';
 import { TeamsModule } from './teams/teams.module';
 import { ProjectTeam } from './models/project-team.model';
 import { UsersModule } from './users/users.module';
+import { MailModule } from './mail/mail.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -72,6 +73,8 @@ import { UsersModule } from './users/users.module';
     TasksModule,
     TeamsModule,
     UsersModule,
+    MailModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

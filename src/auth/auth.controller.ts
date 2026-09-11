@@ -12,6 +12,7 @@ import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { CompleteInviteDto } from './complete-invite-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -40,5 +41,9 @@ export class AuthController {
     const { access_token } = await this.authService.googleLogin(req.user);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/oauth-success?token=${access_token}`);
+  }
+  @Post('complete-invite')
+  completeInvite(@Body() dto: CompleteInviteDto) {
+    return this.authService.completeInvite(dto.token, dto.password);
   }
 }

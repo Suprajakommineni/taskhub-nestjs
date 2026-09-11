@@ -2,6 +2,8 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../models/user.model';
@@ -79,5 +81,30 @@ export class AuthService {
       email: user.email,
     });
     return { access_token: token };
+  }
+  async completeInvite(token: string, password: string) {
+    let payload: { userId: number; purpose: string };
+    try {
+      payload = this.jwtService.verify(token);
+    } catch {
+      throw new BadRequestException('Invite link is invalid or has expired');
+    }
+
+    if (payload.purpose !== 'invite') {
+      throw new BadRequestException('Invalid token');
+    }
+
+    const user = await this.userModel.findByPk(payload.userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.passwordHash) {
+      throw new BadRequestException('This account is already set up');
+    }
+
+    user.passwordHash = await bcrypt.hash(password, 10);
+    await user.save();
+
+    return { message: 'Account set up successfully. You can now log in.' };
   }
 }
