@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -23,15 +22,18 @@ export class TeamsService {
     private eventEmitter: EventEmitter2,
     private jwtService: JwtService,
   ) {}
+
   async create(name: string, ownerId: number) {
     return this.teamModel.create({ name, ownerId });
   }
+
   findAll(ownerId: number) {
     return this.teamModel.findAll({
       where: { ownerId },
       include: [{ model: this.teamMemberModel }],
     });
   }
+
   async findOne(id: number, ownerId: number) {
     const team = await this.teamModel.findByPk(id, {
       include: [{ model: this.teamMemberModel }],
@@ -44,65 +46,63 @@ export class TeamsService {
     }
     return team;
   }
+
   async update(id: number, name: string, ownerId: number) {
     const team = await this.findOne(id, ownerId);
     return team.update({ name });
   }
+
   async remove(id: number, ownerId: number) {
     const team = await this.findOne(id, ownerId);
     await team.destroy();
     return team;
   }
+
   async addMember(
     teamId: number,
     ownerId: number,
     data: { email: string; role: 'lead' | 'member' },
     photoUrl?: string,
   ) {
-    try {
-      await this.findOne(teamId, ownerId);
-      const email = data.email.trim().toLowerCase();
+    await this.findOne(teamId, ownerId);
+    const email = data.email.trim().toLowerCase();
 
-      let user = await this.userModel.findOne({ where: { email } });
-      let isNewUser = false;
+    let user = await this.userModel.findOne({ where: { email } });
+    let isNewUser = false;
 
-      if (!user) {
-        isNewUser = true;
-        user = await this.userModel.create({
-          email,
-          username: email.split('@')[0],
-          passwordHash: null,
-          profilePhoto: photoUrl ?? null,
-        });
-      } else if (photoUrl && !user.profilePhoto) {
-        user.profilePhoto = photoUrl;
-        await user.save();
-      }
-
-      const teamMember = await this.teamMemberModel.create({
-        teamId,
-        userId: user.id,
-        role: data.role,
+    if (!user) {
+      isNewUser = true;
+      user = await this.userModel.create({
+        email,
+        username: email.split('@')[0],
+        passwordHash: null,
+        profilePhoto: photoUrl ?? null,
       });
-
-      if (isNewUser) {
-        const inviteToken = this.jwtService.sign(
-          { userId: user.id, purpose: 'invite' },
-          { expiresIn: '24h' },
-        );
-        await this.eventEmitter.emitAsync('member.invited', {
-          email: user.email,
-          inviteToken,
-        });
-      }
-
-      return teamMember;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const stack = err instanceof Error ? err.stack : '';
-      throw new BadRequestException(`FULL DEBUG: ${message} | STACK: ${stack}`);
+    } else if (photoUrl && !user.profilePhoto) {
+      user.profilePhoto = photoUrl;
+      await user.save();
     }
+
+    const teamMember = await this.teamMemberModel.create({
+      teamId,
+      userId: user.id,
+      role: data.role,
+    });
+
+    if (isNewUser) {
+      const inviteToken = this.jwtService.sign(
+        { userId: user.id, purpose: 'invite' },
+        { expiresIn: '24h' },
+      );
+      await this.eventEmitter.emitAsync('member.invited', {
+        email: user.email,
+        inviteToken,
+      });
+    }
+
+    return teamMember;
   }
+
   async updateMember(
     teamId: number,
     memberId: number,

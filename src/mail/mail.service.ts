@@ -1,4 +1,3 @@
-// mail.service.ts
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
@@ -15,24 +14,15 @@ export class MailService {
   });
 
   async sendInviteEmail(toEmail: string, inviteToken: string) {
-    console.log(
-      '[DEBUG] sendInviteEmail called for',
-      toEmail,
-      'MAIL_HOST=',
-      process.env.MAIL_HOST,
-    );
     const inviteLink = `${process.env.FRONTEND_URL}/complete-invite?token=${inviteToken}`;
-    // ...rest unchanged
 
-    const info = await this.transporter.sendMail({
-      from: '"TaskHub" <no-reply@taskhub.com>',
+    await this.transporter.sendMail({
+      from: `"TaskHub" <${process.env.MAIL_USER}>`,
       to: toEmail,
       subject: "You've been invited to TaskHub",
       text: `You've been added to a team on TaskHub. Set up your account here: ${inviteLink}`,
       html: `<p>You've been added to a team on <b>TaskHub</b>.</p>
              <p><a href="${inviteLink}">Click here to set your password and get started</a></p>`,
     });
-
-    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
   }
 }
