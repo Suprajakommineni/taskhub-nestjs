@@ -86,9 +86,9 @@ export class TeamsService {
     if (isNewUser) {
       const inviteToken = this.jwtService.sign(
         { userId: user.id, purpose: 'invite' },
-        { expiresIn: '24h' }, // overrides the module default for this specific token
+        { expiresIn: '24h' },
       );
-      this.eventEmitter.emit('member.invited', {
+      await this.eventEmitter.emitAsync('member.invited', {
         email: user.email,
         inviteToken,
       });
