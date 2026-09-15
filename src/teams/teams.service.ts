@@ -59,48 +59,49 @@ export class TeamsService {
     data: { email: string; role: 'lead' | 'member' },
     photoUrl?: string,
   ) {
-    await this.findOne(teamId, ownerId);
-    const email = data.email.trim().toLowerCase();
+    try {
+      await this.findOne(teamId, ownerId);
+      const email = data.email.trim().toLowerCase();
 
-    let user = await this.userModel.findOne({ where: { email } });
-    let isNewUser = false;
+      let user = await this.userModel.findOne({ where: { email } });
+      let isNewUser = false;
 
-    if (!user) {
-      isNewUser = true;
-      user = await this.userModel.create({
-        email,
-        username: email.split('@')[0], // placeholder, they can change it later
-        passwordHash: null,
-        profilePhoto: photoUrl ?? null,
+      if (!user) {
+        isNewUser = true;
+        user = await this.userModel.create({
+          email,
+          username: email.split('@')[0],
+          passwordHash: null,
+          profilePhoto: photoUrl ?? null,
+        });
+      } else if (photoUrl && !user.profilePhoto) {
+        user.profilePhoto = photoUrl;
+        await user.save();
+      }
+
+      const teamMember = await this.teamMemberModel.create({
+        teamId,
+        userId: user.id,
+        role: data.role,
       });
-    } else if (photoUrl && !user.profilePhoto) {
-      user.profilePhoto = photoUrl;
-      await user.save();
-    }
 
-    const teamMember = await this.teamMemberModel.create({
-      teamId,
-      userId: user.id,
-      role: data.role,
-    });
-
-    if (isNewUser) {
-      const inviteToken = this.jwtService.sign(
-        { userId: user.id, purpose: 'invite' },
-        { expiresIn: '24h' },
-      );
-      try {
+      if (isNewUser) {
+        const inviteToken = this.jwtService.sign(
+          { userId: user.id, purpose: 'invite' },
+          { expiresIn: '24h' },
+        );
         await this.eventEmitter.emitAsync('member.invited', {
           email: user.email,
           inviteToken,
         });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        throw new BadRequestException(`INVITE EMAIL DEBUG: ${message}`);
       }
-    }
 
-    return teamMember;
+      return teamMember;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const stack = err instanceof Error ? err.stack : '';
+      throw new BadRequestException(`FULL DEBUG: ${message} | STACK: ${stack}`);
+    }
   }
   async updateMember(
     teamId: number,
