@@ -95,7 +95,8 @@ export class TeamsService {
           inviteToken,
         });
       } catch (err) {
-        throw new BadRequestException(`INVITE EMAIL DEBUG: ${err.message}`);
+        const message = err instanceof Error ? err.message : String(err);
+        throw new BadRequestException(`INVITE EMAIL DEBUG: ${message}`);
       }
     }
 
