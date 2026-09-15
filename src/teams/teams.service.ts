@@ -84,14 +84,17 @@ export class TeamsService {
     });
 
     if (isNewUser) {
+      console.log('[DEBUG] isNewUser true, about to sign token');
       const inviteToken = this.jwtService.sign(
         { userId: user.id, purpose: 'invite' },
         { expiresIn: '24h' },
       );
+      console.log('[DEBUG] token signed, calling emitAsync');
       await this.eventEmitter.emitAsync('member.invited', {
         email: user.email,
         inviteToken,
       });
+      console.log('[DEBUG] emitAsync finished');
     }
 
     return teamMember;

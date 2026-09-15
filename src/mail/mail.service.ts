@@ -15,7 +15,14 @@ export class MailService {
   });
 
   async sendInviteEmail(toEmail: string, inviteToken: string) {
+    console.log(
+      '[DEBUG] sendInviteEmail called for',
+      toEmail,
+      'MAIL_HOST=',
+      process.env.MAIL_HOST,
+    );
     const inviteLink = `${process.env.FRONTEND_URL}/complete-invite?token=${inviteToken}`;
+    // ...rest unchanged
 
     const info = await this.transporter.sendMail({
       from: '"TaskHub" <no-reply@taskhub.com>',

@@ -8,6 +8,8 @@ export class MailListener {
 
   @OnEvent('member.invited')
   async handleMemberInvited(payload: { email: string; inviteToken: string }) {
+    console.log('[DEBUG] listener triggered for', payload.email);
     await this.mailService.sendInviteEmail(payload.email, payload.inviteToken);
+    console.log('[DEBUG] listener finished calling sendInviteEmail');
   }
 }
