@@ -40,7 +40,7 @@ export class TasksService {
     assignees: { teamMemberId: number; roleInTask?: string[] }[] = [],
     priority?: 'low' | 'medium' | 'high',
   ) {
-    const project = await this.checkProjectOwnership(projectId, ownerId);
+    const project = await this.checkProjectAccess(projectId, ownerId);
     const task = await this.taskModel.create({
       title,
       description,
@@ -57,7 +57,7 @@ export class TasksService {
   }
 
   async findAllForProject(projectId: number, ownerId: number) {
-    await this.checkProjectOwnership(projectId, ownerId);
+    await this.checkProjectAccess(projectId, ownerId);
     return this.taskModel.findAll({
       where: { projectId },
       include: [
@@ -80,7 +80,7 @@ export class TasksService {
   }
 
   async update(id: number, ownerId: number, data: UpdateTaskDto) {
-    const task = await this.findTaskAndCheckOwnership(id, ownerId);
+    const task = await this.findTaskAndCheckAccess(id, ownerId);
     return task.update(data);
   }
 
@@ -96,7 +96,7 @@ export class TasksService {
     assignees: { teamMemberId: number; roleInTask?: string[] }[],
     projectOverride?: Project,
   ) {
-    const task = await this.findTaskAndCheckOwnership(taskId, ownerId);
+    const task = await this.findTaskAndCheckAccess(taskId, ownerId);
     const project =
       projectOverride ?? (await this.projectModel.findByPk(task.projectId))!;
 
@@ -128,9 +128,15 @@ export class TasksService {
       where: { taskId, teamMemberId: { [Op.in]: requestedIds } },
       attributes: ['teamMemberId'],
     });
-    const alreadyAssignedIds = new Set(existingAssignees.map((a) => a.teamMemberId));
+    const alreadyAssignedIds = new Set(
+      existingAssignees.map((a) => a.teamMemberId),
+    );
 
-    const toCreate: { taskId: number; teamMemberId: number; roleInTask?: string[] }[] = [];
+    const toCreate: {
+      taskId: number;
+      teamMemberId: number;
+      roleInTask?: string[];
+    }[] = [];
     for (const { teamMemberId, roleInTask } of uniqueAssignees) {
       const member = memberById.get(teamMemberId);
       if (!member) {
@@ -157,7 +163,7 @@ export class TasksService {
   }
 
   async unassignMember(taskId: number, teamMemberId: number, ownerId: number) {
-    await this.findTaskAndCheckOwnership(taskId, ownerId);
+    await this.findTaskAndCheckAccess(taskId, ownerId);
     const assignee = await this.taskAssigneeModel.findOne({
       where: { taskId, teamMemberId },
     });
@@ -168,6 +174,39 @@ export class TasksService {
     return assignee;
   }
 
+  // Any project owner OR team member linked to the project can view/create/
+  // update tasks and manage assignees — this is normal day-to-day
+  // collaboration, not a destructive action.
+  private async checkProjectAccess(projectId: number, userId: number) {
+    const project = await this.projectModel.findByPk(projectId);
+    if (!project) throw new NotFoundException('Project not found');
+
+    if (project.ownerId === userId) return project;
+
+    const teamLinks = await this.projectTeamModel.findAll({
+      where: { projectId },
+      attributes: ['teamId'],
+    });
+    const teamIds = teamLinks.map((l) => l.teamId);
+
+    if (teamIds.length > 0) {
+      const membership = await this.teamMemberModel.findOne({
+        where: { teamId: { [Op.in]: teamIds }, userId },
+      });
+      if (membership) return project;
+    }
+
+    throw new ForbiddenException('You are not a member of this project');
+  }
+
+  private async findTaskAndCheckAccess(id: number, userId: number) {
+    const task = await this.taskModel.findByPk(id);
+    if (!task) throw new NotFoundException('Task not found');
+    await this.checkProjectAccess(task.projectId, userId);
+    return task;
+  }
+
+  // Deleting a task is destructive and stays restricted to the project owner.
   private async checkProjectOwnership(projectId: number, ownerId: number) {
     const project = await this.projectModel.findByPk(projectId);
     if (!project) throw new NotFoundException('Project not found');

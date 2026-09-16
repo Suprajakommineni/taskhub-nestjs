@@ -94,10 +94,14 @@ export class TeamsService {
         { userId: user.id, purpose: 'invite' },
         { expiresIn: '24h' },
       );
-      await this.eventEmitter.emitAsync('member.invited', {
-        email: user.email,
-        inviteToken,
-      });
+      try {
+        await this.eventEmitter.emitAsync('member.invited', {
+          email: user.email,
+          inviteToken,
+        });
+      } catch {
+        // Don't let a mail-provider failure block the member/user creation itself.
+      }
     }
 
     return teamMember;
